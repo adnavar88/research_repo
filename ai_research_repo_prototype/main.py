@@ -1,81 +1,45 @@
 import streamlit as st
 
-st.set_page_config(page_title="Lab Workflow UX Research", layout="wide")
+# Set page config
+st.set_page_config(page_title="Extractions Research Chat", layout="wide")
 
-st.title("🧬 Lab Workflow UX Research Interview")
-st.subheader("Marco Montenegro – Extractions Department Manager")
-st.caption("Interview conducted by digomez@natera.com on Thu, 17 Jul 2025")
+st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
+st.caption("Based on interview with Marco Montenegro, Extractions Department Manager at Natera")
 
-st.markdown("### 🧑‍🔬 Background & Role")
-st.markdown("""
-- 11 years at Natera, Extractions Department Manager  
-- Team: 166 people (targeting 183 by year-end), 24/7 operations across 3 shifts  
-- Education: UC San Diego microbiology, earned CGMBS license through Natera program  
-- Department role: DNA extraction for all downstream teams (Panorama, Signatera, Verizon, tissue, etc.)
-""")
+# Display transcript link
+with st.expander("📄 View Original Transcript"):
+    st.markdown("[Read the full interview on Granola](https://notes.granola.ai/d/c500ce14-882f-4c3c-b6dd-ca867944b030)")
 
-st.markdown("### 🛠 Current Workflow & Tools")
-st.markdown("""
-- **Primary tools:** Google Sheets, Google Chat, Google Tasks  
-- **Schedule management:**  
-  - Shared Google Sheets with color-coded station assignments  
-  - Accessible across shifts for real-time planning  
-- **Performance tracking:**  
-  - Custom Google Sheets for sample metrics and batch monitoring  
-- **Communication:**  
-  - Supervisor group chats  
-  - Daily huddles  
-  - In-person shift handoffs
-""")
+# Simulated knowledge base from the interview
+context = {
+    "tools": "Marco's team uses Google Sheets (for scheduling and performance tracking), Google Chat, and Google Tasks.",
+    "team_structure": "The extractions team has 166 people working 24/7 across 3 shifts, with daily huddles and supervisor group chats.",
+    "metrics": "SLAs: Prospera – 6 hours, Panorama – 24 hours. Also tracks training completion, attendance, error rates.",
+    "pain_points": "Advantage 1.0 is slow and under-supported. Communication is tough across 160+ people. Shipping and instrument delays cause bottlenecks.",
+    "improvements": "There's interest in automating daily schedules with Python, tracking instruments, and reducing Google Sheet usage. Some staff use Snowflake scripts.",
+    "project": "Marco is involved in bringing Altera assay in-house, giving feedback to platform teams, and ensuring scalability."
+}
 
-st.markdown("### 🤝 Decision Making & Project Involvement")
-st.markdown("""
-- **Project:** Altera assay internalization (moving from send-out to in-house testing)  
-- Role in software design feedback and production scalability  
-- Collaborates with platform teams and lab informatics  
-- Provides input on operator workflow optimization
-""")
+# Input box
+query = st.text_input("❓ Ask a question about the extractions team's user research")
 
-st.markdown("### 📊 Performance Metrics & OKRs")
-st.markdown("""
-- **SLAs by product:**  
-  - Prospera: 6-hour turnaround from receipt  
-  - Panorama: 24-hour turnaround from receipt  
-- **Additional metrics:**  
-  - Error minimization  
-  - 95% training completion  
-  - Attendance/compliance  
-- **Recognition:**  
-  - Verbal acknowledgment and performance transparency
-""")
+# Simple rule-based QA logic (simulating GPT response based on transcript)
+if query:
+    query_lower = query.lower()
+    response = "🤖 Hmm, I couldn’t find anything in the interview that matches your question."
 
-st.markdown("### ⚠️ Pain Points & Challenges")
-st.markdown("""
-- **Advantage 1.0 software limitations:**  
-  - Slow loading times  
-  - Limited engineering resources  
-  - Focus diverted to new systems  
-- **Team communication scale:** 160+ people over 3 shifts  
-- **Operational bottlenecks:**  
-  - Instrument downtime  
-  - FedEx delays (Memphis hub)  
-  - Transport lag from Pleasanton  
-- **Email overload from automated systems**
-""")
+    if "tools" in query_lower or "software" in query_lower:
+        response = context["tools"]
+    elif "team" in query_lower or "structure" in query_lower or "shift" in query_lower:
+        response = context["team_structure"]
+    elif "metric" in query_lower or "sla" in query_lower or "okrs" in query_lower:
+        response = context["metrics"]
+    elif "challenge" in query_lower or "pain" in query_lower or "issue" in query_lower:
+        response = context["pain_points"]
+    elif "improve" in query_lower or "automation" in query_lower or "solution" in query_lower:
+        response = context["improvements"]
+    elif "altera" in query_lower or "project" in query_lower:
+        response = context["project"]
 
-st.markdown("### 🚀 Improvement Opportunities")
-st.markdown("""
-- **Automation ideas:**  
-  - Daily schedule scripting (Python)  
-  - Instrument status dashboard  
-  - Eliminate manual Google Sheets workflows  
-- **Team-driven innovation:**  
-  - Internal automation proposals by staff  
-  - Snowflake scripts for rapid data pulls  
-- **Staffing growth:**  
-  - Additional managers/supervisors  
-  - Challenges accessing Manager Development Program (MDP) on time
-""")
-
-st.markdown("---")
-st.markdown("📄 **Full transcript:** [View on Granola](https://notes.granola.ai/d/c500ce14-882f-4c3c-b6dd-ca867944b030)")
+    st.markdown(f"**💬 You asked:** {query}")
+    st.markdown(f"**🤖 AI says:** {response}")
