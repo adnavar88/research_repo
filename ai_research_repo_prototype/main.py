@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(page_title="Extractions Research Chat", layout="wide")
 
 st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
-st.caption("Based on interview with Marco Montenegro, Extractions Department Manager at Natera")
+st.caption("Based on interview with the Extractions Manager at Natera")
 
 # Display transcript link
 with st.expander("📄 View Original Transcript"):
@@ -12,12 +12,12 @@ with st.expander("📄 View Original Transcript"):
 
 # Simulated knowledge base from the interview
 context = {
-    "tools": "Marco's team uses Google Sheets (for scheduling and performance tracking), Google Chat, and Google Tasks.",
+    "tools": "The Extractions Manager's team uses Google Sheets (for scheduling and performance tracking), Google Chat, and Google Tasks.",
     "team_structure": "The extractions team has 166 people working 24/7 across 3 shifts, with daily huddles and supervisor group chats.",
     "metrics": "SLAs: Prospera – 6 hours, Panorama – 24 hours. Also tracks training completion, attendance, error rates.",
     "pain_points": "Advantage 1.0 is slow and under-supported. Communication is tough across 160+ people. Shipping and instrument delays cause bottlenecks.",
     "improvements": "There's interest in automating daily schedules with Python, tracking instruments, and reducing Google Sheet usage. Some staff use Snowflake scripts.",
-    "project": "Marco is involved in bringing Altera assay in-house, giving feedback to platform teams, and ensuring scalability."
+    "project": "The Extractions Manager is involved in bringing Altera assay in-house, giving feedback to platform teams, and ensuring scalability."
 }
 
 # Input box
