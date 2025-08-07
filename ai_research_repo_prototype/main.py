@@ -13,16 +13,14 @@ st.set_page_config(page_title="Extractions Research Chat", layout="wide")
 st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
 st.caption("Based on interviews from the UX research archive")
 
-# --- Load transcript from file ---
-file_path = Path("research_docs/Lab Workflow UX Research Interviews.txt")
-
-# 🔍 Debugging output
-st.write("📁 Files in research_docs folder:", list(Path("research_docs").glob("*")))
+# --- Load transcript from file (now located in same folder as main.py) ---
+file_path = Path("Lab Workflow UX Research Interviews.txt")
 
 if file_path.exists():
     transcript = file_path.read_text(encoding="utf-8")
+    st.success("✅ Transcript loaded successfully.")
 else:
-    st.error("Transcript file not found. Please upload 'Lab Workflow UX Research Interviews.txt' to the research_docs folder.")
+    st.error("Transcript file not found. Please make sure it's in the same folder as main.py.")
     st.stop()
 
 # --- Display original text ---
@@ -53,4 +51,3 @@ if query:
 
     st.markdown(f"**💬 You asked:** {query}")
     st.markdown(f"**🤖 AI says:** {response}")
-
