@@ -14,7 +14,7 @@ st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
 st.caption("Based on interviews from the UX research archive")
 
 # --- Load transcript from file ---
-file_path = Path("text.txt")  # ✅ your new filename
+file_path = Path("text.txt")  # Make sure this file is in the same folder as main.py
 
 if file_path.exists():
     transcript = file_path.read_text(encoding="utf-8")
@@ -25,7 +25,7 @@ else:
 
 # --- Display original text ---
 with st.expander("📄 View Original Interview Transcript"):
-    st.text(transcript[:5000])  # Show first 5000 chars
+    st.text(transcript[:5000])  # Only show first 5000 characters
 
 # --- Process text for embedding ---
 docs = [Document(page_content=transcript)]
@@ -45,4 +45,9 @@ query = st.text_input("❓ Ask a question about the extractions team's user rese
 
 if query:
     with st.spinner("🤖 Thinking..."):
-        retriever = vectorstore.as_retriever(_
+        retriever = vectorstore.as_retriever()
+        relevant_docs = retriever.get_relevant_documents(query)
+        response = qa_chain.run(input_documents=relevant_docs, question=query)
+
+    st.markdown(f"**💬 You asked:** {query}")
+    st.markdown(f"**🤖 AI says:** {response}")
