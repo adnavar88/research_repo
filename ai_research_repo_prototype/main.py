@@ -1,6 +1,4 @@
 import streamlit as st
-from pathlib import Path
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
@@ -13,19 +11,19 @@ st.set_page_config(page_title="Extractions Research Chat", layout="wide")
 st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
 st.caption("Based on interviews from the UX research archive")
 
-# --- Load transcript from file ---
-file_path = Path("text.txt")  # Make sure this file is in the same folder as main.py
+# --- Embed the transcript directly ---
+transcript = """
+[PASTE YOUR FULL INTERVIEW TEXT HERE]
 
-if file_path.exists():
-    transcript = file_path.read_text(encoding="utf-8")
-    st.success("✅ Transcript loaded successfully.")
-else:
-    st.error("Transcript file not found. Please make sure 'text.txt' is in the same folder as main.py.")
-    st.stop()
+Example:
+The extractions team at Natera works across three shifts, with 166 people in total. They use Google Sheets for tracking performance, and communicate using Google Chat and Tasks...
+"""
+
+st.success("✅ Transcript embedded and loaded successfully.")
 
 # --- Display original text ---
 with st.expander("📄 View Original Interview Transcript"):
-    st.text(transcript[:5000])  # Only show first 5000 characters
+    st.text(transcript[:5000])  # Show first 5000 characters
 
 # --- Process text for embedding ---
 docs = [Document(page_content=transcript)]
