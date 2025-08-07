@@ -12,25 +12,25 @@ from langchain.chains import RetrievalQA
 # --- Streamlit UI setup ---
 st.set_page_config(page_title="Lab Workflow Research Chat", layout="wide")
 st.title("🧬 Ask Me Anything: Lab Workflow Research")
-st.caption("Powered by Hugging Face and LangChain (No OpenAI required)")
+st.caption("Powered by Hugging Face (Mistral 7B) + LangChain")
 
 # --- Load transcript from file ---
 file_path = Path("transcript.txt")
 if file_path.exists():
     transcript = file_path.read_text(encoding="utf-8")
-    st.success("✅ Transcript loaded successfully.")
+    st.success("✅ transcript.txt loaded successfully.")
 else:
-    st.error("❌ transcript.txt not found in ai_research_repo_prototype/. Please upload it.")
+    st.error("❌ transcript.txt not found in ai_research_repo_prototype/.")
     st.stop()
 
-# --- Display raw transcript ---
-with st.expander("📄 View Full Interview Transcript"):
-    st.text(transcript[:5000])  # Limit preview to first 5000 chars for performance
+# --- Show transcript preview ---
+with st.expander("📄 View Transcript"):
+    st.text(transcript[:5000])  # Limit preview to first 5000 characters
 
-# --- User question input ---
-query = st.text_input("❓ Ask a question about lab workflows, systems, pain points, or improvements")
+# --- Input box ---
+query = st.text_input("❓ Ask a question about lab operations, pain points, or process improvements")
 
-# --- Vector store and embedding setup ---
+# --- Embeddings + Vectorstore ---
 try:
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     docs = [Document(page_content=transcript)]
@@ -42,12 +42,13 @@ try:
     )
 
     vectorstore = FAISS.from_documents(split_docs, embeddings)
+
 except Exception as e:
-    st.error("❌ Error during vectorstore creation")
+    st.error("❌ Error during vectorstore creation.")
     st.code(traceback.format_exc())
     st.stop()
 
-# --- Run query if submitted ---
+# --- Handle user query ---
 if query:
     st.markdown(f"**💬 You asked:** {query}")
     response = None
@@ -55,16 +56,15 @@ if query:
     try:
         token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
         if not token:
-            raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets.")
+            raise ValueError("❌ Missing Hugging Face token. Add it to Streamlit secrets.")
 
-        # Hugging Face LLM (fully supported)
+        # ✅ Mistral 7B - fully compatible with HuggingFaceHub
         llm = HuggingFaceHub(
-            repo_id="google/flan-t5-base",
-            task="text2text-generation",
-            model_kwargs={"temperature": 0.5, "max_length": 512}
+            repo_id="mistralai/Mistral-7B-Instruct-v0.1",
+            task="text-generation",
+            model_kwargs={"temperature": 0.5, "max_new_tokens": 512}
         )
 
-        # Set up Retrieval QA chain
         qa_chain = RetrievalQA.from_chain_type(
             llm=llm,
             retriever=vectorstore.as_retriever(),
@@ -81,4 +81,4 @@ if query:
     if response:
         st.markdown(f"**🤖 AI says:** {response}")
     else:
-        st.warning("⚠️ No answer generated.")
+        st.warning("⚠️ No response generated.")
