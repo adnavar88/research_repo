@@ -12,7 +12,7 @@ st.set_page_config(page_title="Extractions Research Chat", layout="wide")
 st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
 st.caption("Powered by Hugging Face (No OpenAI Required)")
 
-# --- Embed the transcript directly ---
+# --- Embedded transcript ---
 transcript = """
 The extractions team at Natera works across three shifts, with 166 people in total. 
 They use Google Sheets for tracking performance and scheduling, and communicate via Google Chat and Tasks. 
@@ -24,14 +24,14 @@ The Extractions Manager is helping scale the Altera assay and interfaces with pl
 
 st.success("✅ Transcript loaded.")
 
-# --- Display original text ---
+# --- Display the transcript ---
 with st.expander("📄 View Original Interview Transcript"):
     st.text(transcript[:5000])
 
-# --- Input box is always shown ---
+# --- Input box (always visible) ---
 query = st.text_input("❓ Ask a question about the extractions team's user research")
 
-# --- Prepare embeddings/vectorstore ---
+# --- Prepare vectorstore ---
 try:
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     docs = [Document(page_content=transcript)]
@@ -39,36 +39,32 @@ try:
 
     embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore = FAISS.from_documents(split_docs, embeddings)
-
 except Exception as e:
     st.error(f"❌ Error during vectorstore creation: {e}")
     st.stop()
 
-# --- Process the query if one is submitted ---
+# --- Handle user query ---
 if query:
     with st.spinner("🤖 Thinking..."):
         try:
-            # Check token
             token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
             if not token:
-                raise ValueError("❌ Hugging Face token is missing. Please set HUGGINGFACEHUB_API_TOKEN in Streamlit secrets.")
+                raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets as HUGGINGFACEHUB_API_TOKEN.")
 
-            # Load the LLM with correct task
+            # ✅ Use a compatible model
             llm = HuggingFaceHub(
-                repo_id="google/flan-t5-large",
+                repo_id="google/flan-t5-base",
                 task="text2text-generation",
                 model_kwargs={"temperature": 0.5, "max_length": 512}
             )
 
-            # Retrieve context and generate answer
             retriever = vectorstore.as_retriever()
             relevant_docs = retriever.get_relevant_documents(query)
             qa_chain = load_qa_chain(llm, chain_type="stuff")
             response = qa_chain.run(input_documents=relevant_docs, question=query)
 
         except Exception as e:
-            response = f"❌ Failed to load model or generate response:\n\n{str(e)}"
+            response = f"❌ Failed to generate response:\n\n{str(e)}"
 
     st.markdown(f"**💬 You asked:** {query}")
     st.markdown(f"**🤖 AI says:** {response}")
-
