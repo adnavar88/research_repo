@@ -1,88 +1,27 @@
 import streamlit as st
-import os
-import traceback
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings import SentenceTransformerEmbeddings
-from langchain.llms import HuggingFaceHub
-from langchain.docstore.document import Document
-from langchain.chains import RetrievalQA
+from pathlib import Path
 
-# --- Streamlit UI setup ---
-st.set_page_config(page_title="Extractions Research Chat", layout="wide")
-st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
-st.caption("Powered by Hugging Face (No OpenAI Required)")
+# --- Minimal Streamlit app to confirm file + input box work ---
+st.set_page_config(page_title="Lab Workflow Transcript Viewer", layout="wide")
+st.title("📄 Lab Research Transcript Viewer")
+st.caption("This app just reads your transcript file and shows a chat box")
 
-# --- Embedded transcript ---
-transcript = """
-The extractions team at Natera works across three shifts, with 166 people in total. 
-They use Google Sheets for tracking performance and scheduling, and communicate via Google Chat and Tasks. 
-Key pain points include Advantage 1.0 being slow, limited platform support, and instrument or shipping delays. 
-There’s a push for automation, especially around scheduling and instrument tracking. 
-Some staff also write Snowflake queries to support their work. 
-The Extractions Manager is helping scale the Altera assay and interfaces with platform teams.
-"""
-
-st.success("✅ Transcript loaded.")
-
-# --- Display the transcript ---
-with st.expander("📄 View Original Interview Transcript"):
-    st.text(transcript[:5000])
-
-# --- Input box (always visible) ---
-query = st.text_input("❓ Ask a question about the extractions team's user research")
-
-# --- Vectorstore creation ---
-try:
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    docs = [Document(page_content=transcript)]
-    split_docs = splitter.split_documents(docs)
-
-    embeddings = SentenceTransformerEmbeddings(
-        model_name="all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}  # Safe for Streamlit Cloud
-    )
-
-    vectorstore = FAISS.from_documents(split_docs, embeddings)
-
-except Exception as e:
-    st.error(f"❌ Error during vectorstore creation: {e}")
-    st.code(traceback.format_exc())
+# --- Load transcript.txt ---
+file_path = Path("transcript.txt")
+if file_path.exists():
+    transcript = file_path.read_text(encoding="utf-8")
+    st.success("✅ transcript.txt loaded successfully.")
+else:
+    st.error("❌ transcript.txt not found.")
     st.stop()
 
-# --- Handle query and display result ---
+# --- Preview transcript ---
+with st.expander("📄 View Transcript Preview"):
+    st.text(transcript[:5000])  # Show first 5000 characters only
+
+# --- Input box ---
+query = st.text_input("❓ Ask a question (AI not enabled yet)")
+
 if query:
     st.markdown(f"**💬 You asked:** {query}")
-    response = None
-
-    try:
-        token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-        if not token:
-            raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets.")
-
-        # ✅ Supported model
-        llm = HuggingFaceHub(
-            repo_id="google/flan-t5-base",
-            task="text2text-generation",
-            model_kwargs={"temperature": 0.5, "max_length": 512}
-        )
-
-        # QA chain
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            retriever=vectorstore.as_retriever(),
-            chain_type="stuff",
-            return_source_documents=False
-        )
-
-        response = qa_chain.run(query)
-
-    except Exception as e:
-        st.error("❌ An error occurred while generating the response.")
-        st.code(traceback.format_exc())
-        response = None
-
-    if response:
-        st.markdown(f"**🤖 AI says:** {response}")
-    else:
-        st.warning("⚠️ No response generated.")
+    st.info("🧠 This is just a placeholder. No AI response yet.")
