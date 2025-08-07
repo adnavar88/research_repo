@@ -1,23 +1,23 @@
 import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import SentenceTransformerEmbeddings
 from langchain.llms import HuggingFaceHub
 from langchain.docstore.document import Document
 from langchain.chains.question_answering import load_qa_chain
 
 # --- Streamlit UI setup ---
-st.set_page_config(page_title="Extractions Research Chat", layout="wide")
-st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
+st.set_page_config(page_title="Research Chat", layout="wide")
+st.title("🧬 Ask Me Anything: Lab Workflow Research")
 st.caption("Powered by Hugging Face (No OpenAI Required)")
 
-# --- Embed the transcript directly ---
+# --- Embedded transcript (direct input) ---
 transcript = """
 The extractions team at Natera works across three shifts, with 166 people in total. 
 They use Google Sheets for tracking performance and scheduling, and communicate via Google Chat and Tasks. 
 Key pain points include Advantage 1.0 being slow, limited platform support, and instrument or shipping delays. 
-There’s also a push for automation, especially around scheduling and instrument tracking. 
-Staff sometimes write Snowflake queries to support the work. 
+There’s a push for automation, especially around scheduling and instrument tracking. 
+Some staff also write Snowflake queries to support their work. 
 The Extractions Manager is helping scale the Altera assay and interfaces with platform teams.
 """
 
@@ -25,22 +25,22 @@ st.success("✅ Transcript loaded.")
 
 # --- Display original text ---
 with st.expander("📄 View Original Interview Transcript"):
-    st.text(transcript[:5000])
+    st.text(transcript[:5000])  # Only show the first 5000 characters
 
-# --- Split and embed ---
+# --- Split into chunks ---
 splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 docs = [Document(page_content=transcript)]
 split_docs = splitter.split_documents(docs)
 
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# --- Embed using SentenceTransformer (offline-compatible) ---
+embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 vectorstore = FAISS.from_documents(split_docs, embeddings)
 
-# --- Hugging Face LLM via HuggingFaceHub ---
+# --- Load HF LLM for Q&A ---
 llm = HuggingFaceHub(
-    repo_id="google/flan-t5-large", 
+    repo_id="google/flan-t5-large",
     model_kwargs={"temperature": 0.5, "max_length": 512}
 )
-
 qa_chain = load_qa_chain(llm, chain_type="stuff")
 
 # --- User input ---
