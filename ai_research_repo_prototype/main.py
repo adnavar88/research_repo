@@ -13,19 +13,19 @@ st.set_page_config(page_title="Extractions Research Chat", layout="wide")
 st.title("🧬 Ask Me Anything: Lab Workflow Research (Extractions)")
 st.caption("Based on interviews from the UX research archive")
 
-# --- Load transcript from file (now located in same folder as main.py) ---
-file_path = Path("Lab Workflow UX Research Interviews.txt")
+# --- Load transcript from file ---
+file_path = Path("text.txt")  # ✅ your new filename
 
 if file_path.exists():
     transcript = file_path.read_text(encoding="utf-8")
     st.success("✅ Transcript loaded successfully.")
 else:
-    st.error("Transcript file not found. Please make sure it's in the same folder as main.py.")
+    st.error("Transcript file not found. Please make sure 'text.txt' is in the same folder as main.py.")
     st.stop()
 
 # --- Display original text ---
 with st.expander("📄 View Original Interview Transcript"):
-    st.text(transcript[:5000])  # Only show first 5000 chars for readability
+    st.text(transcript[:5000])  # Show first 5000 chars
 
 # --- Process text for embedding ---
 docs = [Document(page_content=transcript)]
@@ -45,9 +45,4 @@ query = st.text_input("❓ Ask a question about the extractions team's user rese
 
 if query:
     with st.spinner("🤖 Thinking..."):
-        retriever = vectorstore.as_retriever()
-        relevant_docs = retriever.get_relevant_documents(query)
-        response = qa_chain.run(input_documents=relevant_docs, question=query)
-
-    st.markdown(f"**💬 You asked:** {query}")
-    st.markdown(f"**🤖 AI says:** {response}")
+        retriever = vectorstore.as_retriever(_
