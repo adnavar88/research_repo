@@ -1,30 +1,30 @@
 import streamlit as st
-import pkgutil
+from pathlib import Path
 
-# --- Streamlit UI setup ---
 st.set_page_config(page_title="Lab Transcript Viewer", layout="wide")
 st.title("📄 Lab Research Transcript Viewer")
-st.caption("This app confirms the transcript file is loading correctly and shows a question box.")
+st.caption("Confirms file is loading and input box is working.")
 
-# --- Load transcript.txt using pkgutil ---
+# --- Load transcript.txt the classic way ---
 try:
-    transcript_bytes = pkgutil.get_data(__name__, "transcript.txt")
-    if transcript_bytes is None:
-        raise FileNotFoundError("Streamlit build did not include transcript.txt.")
-    transcript = transcript_bytes.decode("utf-8")
+    file_path = Path(__file__).parent / "transcript.txt"
+    if not file_path.exists():
+        raise FileNotFoundError("File not found at: " + str(file_path.resolve()))
+
+    transcript = file_path.read_text(encoding="utf-8")
     st.success("✅ transcript.txt loaded successfully.")
 except Exception as e:
-    st.error("❌ Failed to load transcript.txt.")
+    st.error("❌ Could not load transcript.txt.")
     st.code(str(e))
     st.stop()
 
-# --- Show preview of transcript ---
+# --- Show preview ---
 with st.expander("📄 View Transcript Preview"):
-    st.text(transcript[:5000])  # Show first 5000 characters
+    st.text(transcript[:5000])
 
-# --- User question input ---
+# --- Input box ---
 query = st.text_input("❓ Ask a question (AI not enabled yet)")
 
 if query:
     st.markdown(f"**💬 You asked:** {query}")
-    st.info("🧠 This is just a placeholder. No AI response yet.")
+    st.info("🧠 Placeholder only — AI coming next.")
