@@ -49,4 +49,4 @@ if query:
 
     st.markdown(f"**💬 You asked:** {query}")
     st.markdown(f"**🤖 AI says:** {response}")
-ponse}")
+
