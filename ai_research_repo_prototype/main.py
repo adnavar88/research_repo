@@ -40,7 +40,7 @@ try:
 
     embeddings = SentenceTransformerEmbeddings(
         model_name="all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}  # Safe for Streamlit Cloud (no GPU)
+        model_kwargs={"device": "cpu"}  # Safe for Streamlit Cloud
     )
 
     vectorstore = FAISS.from_documents(split_docs, embeddings)
@@ -60,14 +60,14 @@ if query:
         if not token:
             raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets.")
 
-        # ✅ Use supported Hugging Face model
+        # ✅ Supported model
         llm = HuggingFaceHub(
-            repo_id="declare-lab/flan-alpaca-base",
+            repo_id="google/flan-t5-base",
             task="text2text-generation",
             model_kwargs={"temperature": 0.5, "max_length": 512}
         )
 
-        # ✅ Use RetrievalQA to combine retriever and LLM
+        # QA chain
         qa_chain = RetrievalQA.from_chain_type(
             llm=llm,
             retriever=vectorstore.as_retriever(),
