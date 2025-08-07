@@ -3,7 +3,7 @@ import os
 import traceback
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.embeddings import SentenceTransformerEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.llms import HuggingFaceHub
 from langchain.docstore.document import Document
 from langchain.chains import RetrievalQA
@@ -11,7 +11,7 @@ from langchain.chains import RetrievalQA
 # --- Streamlit UI setup ---
 st.set_page_config(page_title="Lab Research Q&A", layout="wide")
 st.title("🧬 Ask Me Anything: Lab Workflow Research")
-st.caption("Powered by Hugging Face + LangChain")
+st.caption("Upload your transcript and ask questions. Powered by Hugging Face + LangChain.")
 
 # --- File uploader ---
 uploaded_file = st.file_uploader("📤 Upload your transcript.txt file", type=["txt"])
@@ -38,11 +38,7 @@ if uploaded_file:
         docs = [Document(page_content=transcript)]
         split_docs = splitter.split_documents(docs)
 
-        embeddings = SentenceTransformerEmbeddings(
-            model_name="all-MiniLM-L6-v2",
-            model_kwargs={"device": "cpu"}
-        )
-
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         vectorstore = FAISS.from_documents(split_docs, embeddings)
 
     except Exception as e:
@@ -84,4 +80,4 @@ if uploaded_file:
         else:
             st.warning("⚠️ No response generated.")
 else:
-    st.info("👈 Please upload a transcript file to get started.")
+    st.info("👈 Please upload a `.txt` transcript to begin.")
