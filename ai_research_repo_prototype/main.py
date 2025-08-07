@@ -25,7 +25,7 @@ The Extractions Manager is helping scale the Altera assay and interfaces with pl
 
 st.success("✅ Transcript loaded.")
 
-# --- Display original text ---
+# --- Display the transcript ---
 with st.expander("📄 View Original Interview Transcript"):
     st.text(transcript[:5000])
 
@@ -38,10 +38,16 @@ try:
     docs = [Document(page_content=transcript)]
     split_docs = splitter.split_documents(docs)
 
-    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings = SentenceTransformerEmbeddings(
+        model_name="all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"}  # ✅ force CPU to avoid meta tensor error
+    )
+
     vectorstore = FAISS.from_documents(split_docs, embeddings)
+
 except Exception as e:
     st.error(f"❌ Error during vectorstore creation: {e}")
+    st.code(traceback.format_exc())
     st.stop()
 
 # --- Handle query and display result ---
@@ -54,7 +60,7 @@ if query:
         if not token:
             raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets.")
 
-        # Load the model with correct task
+        # ✅ Compatible model with correct task
         llm = HuggingFaceHub(
             repo_id="declare-lab/flan-alpaca-base",
             task="text2text-generation",
