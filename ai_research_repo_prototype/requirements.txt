@@ -1,7 +1,5 @@
-
-langchain
-openai
-chromadb
 streamlit
+openai
+langchain
+faiss-cpu
 tiktoken
-python-dotenv
