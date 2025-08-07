@@ -1,6 +1,6 @@
-streamlit
 langchain==0.1.14
+streamlit
 faiss-cpu
-tiktoken
+sentence-transformers
 transformers
 huggingface_hub
