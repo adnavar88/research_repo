@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import traceback
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
 from langchain.embeddings import SentenceTransformerEmbeddings
@@ -24,14 +25,14 @@ The Extractions Manager is helping scale the Altera assay and interfaces with pl
 
 st.success("✅ Transcript loaded.")
 
-# --- Display the transcript ---
+# --- Display original text ---
 with st.expander("📄 View Original Interview Transcript"):
     st.text(transcript[:5000])
 
 # --- Input box (always visible) ---
 query = st.text_input("❓ Ask a question about the extractions team's user research")
 
-# --- Prepare vectorstore ---
+# --- Vectorstore creation ---
 try:
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     docs = [Document(page_content=transcript)]
@@ -43,28 +44,35 @@ except Exception as e:
     st.error(f"❌ Error during vectorstore creation: {e}")
     st.stop()
 
-# --- Handle user query ---
+# --- Handle query and display result ---
 if query:
-    with st.spinner("🤖 Thinking..."):
-        try:
-            token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-            if not token:
-                raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets as HUGGINGFACEHUB_API_TOKEN.")
-
-            # ✅ Use a stable model that works with LangChain
-            llm = HuggingFaceHub(
-                repo_id="declare-lab/flan-alpaca-base",
-                task="text2text-generation",
-                model_kwargs={"temperature": 0.5, "max_length": 512}
-            )
-
-            retriever = vectorstore.as_retriever()
-            relevant_docs = retriever.get_relevant_documents(query)
-            qa_chain = load_qa_chain(llm, chain_type="stuff")
-            response = qa_chain.run(input_documents=relevant_docs, question=query)
-
-        except Exception as e:
-            response = f"❌ Failed to generate response:\n\n{str(e)}"
-
     st.markdown(f"**💬 You asked:** {query}")
-    st.markdown(f"**🤖 AI says:** {response}")
+    response = None
+
+    try:
+        token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+        if not token:
+            raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets.")
+
+        # Load the model with correct task
+        llm = HuggingFaceHub(
+            repo_id="declare-lab/flan-alpaca-base",
+            task="text2text-generation",
+            model_kwargs={"temperature": 0.5, "max_length": 512}
+        )
+
+        retriever = vectorstore.as_retriever()
+        relevant_docs = retriever.get_relevant_documents(query)
+
+        qa_chain = load_qa_chain(llm, chain_type="stuff")
+        response = qa_chain.run(input_documents=relevant_docs, question=query)
+
+    except Exception as e:
+        st.error("❌ An error occurred while generating the response.")
+        st.code(traceback.format_exc())
+        response = None
+
+    if response:
+        st.markdown(f"**🤖 AI says:** {response}")
+    else:
+        st.warning("⚠️ No response generated.")
