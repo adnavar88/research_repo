@@ -1,25 +1,28 @@
 import streamlit as st
-from pathlib import Path
+import pkgutil
 
-# --- Minimal Streamlit app to confirm file + input box work ---
-st.set_page_config(page_title="Lab Workflow Transcript Viewer", layout="wide")
+# --- Streamlit UI setup ---
+st.set_page_config(page_title="Lab Transcript Viewer", layout="wide")
 st.title("📄 Lab Research Transcript Viewer")
-st.caption("This app just reads your transcript file and shows a chat box")
+st.caption("This app confirms the transcript file is loading correctly and shows a question box.")
 
-# --- Load transcript.txt ---
-file_path = Path("transcript.txt")
-if file_path.exists():
-    transcript = file_path.read_text(encoding="utf-8")
+# --- Load transcript.txt using pkgutil ---
+try:
+    transcript_bytes = pkgutil.get_data(__name__, "transcript.txt")
+    if transcript_bytes is None:
+        raise FileNotFoundError("Streamlit build did not include transcript.txt.")
+    transcript = transcript_bytes.decode("utf-8")
     st.success("✅ transcript.txt loaded successfully.")
-else:
-    st.error("❌ transcript.txt not found.")
+except Exception as e:
+    st.error("❌ Failed to load transcript.txt.")
+    st.code(str(e))
     st.stop()
 
-# --- Preview transcript ---
+# --- Show preview of transcript ---
 with st.expander("📄 View Transcript Preview"):
-    st.text(transcript[:5000])  # Show first 5000 characters only
+    st.text(transcript[:5000])  # Show first 5000 characters
 
-# --- Input box ---
+# --- User question input ---
 query = st.text_input("❓ Ask a question (AI not enabled yet)")
 
 if query:
