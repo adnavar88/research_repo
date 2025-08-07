@@ -2,5 +2,5 @@ streamlit
 langchain==0.0.275
 faiss-cpu
 transformers
-transformers
 huggingface_hub
+sentence-transformers
