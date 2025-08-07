@@ -51,9 +51,9 @@ if query:
             if not token:
                 raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets as HUGGINGFACEHUB_API_TOKEN.")
 
-            # ✅ Use a compatible model
+            # ✅ Use a stable model that works with LangChain
             llm = HuggingFaceHub(
-                repo_id="google/flan-t5-base",
+                repo_id="declare-lab/flan-alpaca-base",
                 task="text2text-generation",
                 model_kwargs={"temperature": 0.5, "max_length": 512}
             )
