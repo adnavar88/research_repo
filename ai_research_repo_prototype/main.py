@@ -28,32 +28,39 @@ st.success("✅ Transcript loaded.")
 with st.expander("📄 View Original Interview Transcript"):
     st.text(transcript[:5000])
 
-# --- Chunk and embed the document ---
-splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-docs = [Document(page_content=transcript)]
-split_docs = splitter.split_documents(docs)
-
-embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-vectorstore = FAISS.from_documents(split_docs, embeddings)
-
-# --- Input box for user query ---
+# --- Input box is always shown ---
 query = st.text_input("❓ Ask a question about the extractions team's user research")
 
+# --- Prepare embeddings/vectorstore ---
+try:
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    docs = [Document(page_content=transcript)]
+    split_docs = splitter.split_documents(docs)
+
+    embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    vectorstore = FAISS.from_documents(split_docs, embeddings)
+
+except Exception as e:
+    st.error(f"❌ Error during vectorstore creation: {e}")
+    st.stop()
+
+# --- Process the query if one is submitted ---
 if query:
     with st.spinner("🤖 Thinking..."):
         try:
-            # Check that token is set
-            if not os.getenv("HUGGINGFACEHUB_API_TOKEN"):
-                raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets as HUGGINGFACEHUB_API_TOKEN.")
+            # Check token
+            token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+            if not token:
+                raise ValueError("❌ Hugging Face token is missing. Please set HUGGINGFACEHUB_API_TOKEN in Streamlit secrets.")
 
-            # Load the LLM with proper task
+            # Load the LLM with correct task
             llm = HuggingFaceHub(
                 repo_id="google/flan-t5-large",
                 task="text2text-generation",
                 model_kwargs={"temperature": 0.5, "max_length": 512}
             )
 
-            # Perform retrieval + QA
+            # Retrieve context and generate answer
             retriever = vectorstore.as_retriever()
             relevant_docs = retriever.get_relevant_documents(query)
             qa_chain = load_qa_chain(llm, chain_type="stuff")
@@ -64,3 +71,4 @@ if query:
 
     st.markdown(f"**💬 You asked:** {query}")
     st.markdown(f"**🤖 AI says:** {response}")
+
