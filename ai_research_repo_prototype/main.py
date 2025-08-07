@@ -15,6 +15,10 @@ st.caption("Based on interviews from the UX research archive")
 
 # --- Load transcript from file ---
 file_path = Path("research_docs/Lab Workflow UX Research Interviews.txt")
+
+# 🔍 Debugging output
+st.write("📁 Files in research_docs folder:", list(Path("research_docs").glob("*")))
+
 if file_path.exists():
     transcript = file_path.read_text(encoding="utf-8")
 else:
@@ -49,4 +53,5 @@ if query:
 
     st.markdown(f"**💬 You asked:** {query}")
     st.markdown(f"**🤖 AI says:** {response}")
+
 
