@@ -1,82 +1,27 @@
 import streamlit as st
-import os
-import traceback
 from pathlib import Path
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings import SentenceTransformerEmbeddings
-from langchain.llms import HuggingFaceHub
-from langchain.docstore.document import Document
-from langchain.chains import RetrievalQA
 
-# --- Streamlit UI ---
-st.set_page_config(page_title="Lab Workflow Q&A", layout="wide")
-st.title("🧬 Lab Research Chat")
-st.caption("Ask questions about Natera’s lab workflows and pain points")
+# --- UI Setup ---
+st.set_page_config(page_title="Lab Workflow Transcript Viewer", layout="wide")
+st.title("📄 Lab Research Transcript Viewer")
+st.caption("Use this to confirm that your file is loaded and input box works")
 
-# --- Load transcript.txt ---
+# --- Load transcript.txt from file ---
 file_path = Path("transcript.txt")
 if file_path.exists():
     transcript = file_path.read_text(encoding="utf-8")
-    st.success("✅ Loaded transcript.txt")
+    st.success("✅ transcript.txt loaded successfully.")
 else:
-    st.error("❌ transcript.txt not found.")
+    st.error("❌ transcript.txt not found in the current folder.")
     st.stop()
 
-with st.expander("📄 View transcript"):
-    st.text(transcript[:5000])  # Preview first 5000 chars
+# --- Show preview of the transcript ---
+with st.expander("🔍 View transcript preview"):
+    st.text(transcript[:5000])  # Show first 5000 characters
 
-# --- Input box ---
-query = st.text_input("❓ Ask a question about lab operations")
+# --- Input box for simulated query ---
+query = st.text_input("❓ Type a question you'd like to ask based on the transcript")
 
-# --- Prepare vectorstore ---
-try:
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    docs = [Document(page_content=transcript)]
-    split_docs = splitter.split_documents(docs)
-
-    embeddings = SentenceTransformerEmbeddings(
-        model_name="all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}
-    )
-    vectorstore = FAISS.from_documents(split_docs, embeddings)
-
-except Exception as e:
-    st.error("❌ Error during embedding or vectorstore setup.")
-    st.code(traceback.format_exc())
-    st.stop()
-
-# --- Run query if submitted ---
 if query:
     st.markdown(f"**💬 You asked:** {query}")
-    response = None
-
-    try:
-        token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-        if not token:
-            raise ValueError("❌ Missing Hugging Face token.")
-
-        # ✅ Simple, fast, and compatible model
-        llm = HuggingFaceHub(
-            repo_id="google/flan-t5-small",
-            task="text2text-generation",
-            model_kwargs={"temperature": 0.5, "max_length": 512}
-        )
-
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            retriever=vectorstore.as_retriever(),
-            chain_type="stuff",
-            return_source_documents=False
-        )
-
-        response = qa_chain.run(query)
-
-    except Exception as e:
-        st.error("❌ Failed to get a response.")
-        st.code(traceback.format_exc())
-
-    if response:
-        st.markdown(f"**🤖 AI says:** {response}")
-    else:
-        st.warning("⚠️ No response generated.")
+    st.info("🧠 This is a placeholder — no AI response yet. We'll add retrieval + answer next.")
