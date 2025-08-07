@@ -6,7 +6,7 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import SentenceTransformerEmbeddings
 from langchain.llms import HuggingFaceHub
 from langchain.docstore.document import Document
-from langchain.chains.question_answering import load_qa_chain
+from langchain.chains import RetrievalQA
 
 # --- Streamlit UI setup ---
 st.set_page_config(page_title="Extractions Research Chat", layout="wide")
@@ -40,7 +40,7 @@ try:
 
     embeddings = SentenceTransformerEmbeddings(
         model_name="all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}  # ✅ force CPU to avoid meta tensor error
+        model_kwargs={"device": "cpu"}  # Safe for Streamlit Cloud (no GPU)
     )
 
     vectorstore = FAISS.from_documents(split_docs, embeddings)
@@ -60,18 +60,22 @@ if query:
         if not token:
             raise ValueError("❌ Hugging Face token is missing. Add it to Streamlit secrets.")
 
-        # ✅ Compatible model with correct task
+        # ✅ Use supported Hugging Face model
         llm = HuggingFaceHub(
             repo_id="declare-lab/flan-alpaca-base",
             task="text2text-generation",
             model_kwargs={"temperature": 0.5, "max_length": 512}
         )
 
-        retriever = vectorstore.as_retriever()
-        relevant_docs = retriever.get_relevant_documents(query)
+        # ✅ Use RetrievalQA to combine retriever and LLM
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            retriever=vectorstore.as_retriever(),
+            chain_type="stuff",
+            return_source_documents=False
+        )
 
-        qa_chain = load_qa_chain(llm, chain_type="stuff")
-        response = qa_chain.run(input_documents=relevant_docs, question=query)
+        response = qa_chain.run(query)
 
     except Exception as e:
         st.error("❌ An error occurred while generating the response.")
