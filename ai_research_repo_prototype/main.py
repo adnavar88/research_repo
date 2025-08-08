@@ -1,20 +1,13 @@
 import streamlit as st
-import os
-import traceback
 from pathlib import Path
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.embeddings import SentenceTransformerEmbeddings
-from langchain.llms import HuggingFaceHub
-from langchain.docstore.document import Document
-from langchain.chains import RetrievalQA
+import re
 
 # --- Streamlit UI setup ---
-st.set_page_config(page_title="Lab Research Q&A", layout="wide")
-st.title("🧬 Lab Research Q&A (with AI)")
-st.caption("Using local CPU-safe embeddings + flan-t5-small from Hugging Face")
+st.set_page_config(page_title="Lab Research Q&A (Keyword Search)", layout="wide")
+st.title("🔍 Lab Research Transcript Q&A")
+st.caption("Ask a question — we'll return relevant text directly from text.txt")
 
-# --- Load text.txt (from same folder as main.py) ---
+# --- Load local text.txt ---
 try:
     base_path = Path(__file__).parent
     file_path = base_path / "text.txt"
@@ -30,55 +23,25 @@ except Exception as e:
     st.code(str(e))
     st.stop()
 
-# --- Show transcript preview ---
+# --- Display preview ---
 with st.expander("📄 View Transcript Preview"):
-    st.text(transcript[:1000])  # Preview first 1000 chars
+    st.text(transcript[:1000])
 
-# --- User input ---
-query = st.text_input("❓ Ask a question about lab workflows, systems, or pain points")
+# --- Input box ---
+query = st.text_input("❓ Ask a question or enter a keyword (no AI, keyword-based snippet matching)")
 
-# --- Build embeddings + vectorstore ---
-try:
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    docs = [Document(page_content=transcript)]
-    split_docs = splitter.split_documents(docs)
-
-    embeddings = SentenceTransformerEmbeddings(
-        model_name="all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}  # ✅ Ensures CPU compatibility
-    )
-
-    vectorstore = FAISS.from_documents(split_docs, embeddings)
-
-except Exception as e:
-    st.error("❌ Failed to create embeddings or vectorstore.")
-    st.code(traceback.format_exc())
-    st.stop()
-
-# --- Run retrieval + answer generation ---
+# --- Snippet retrieval (simple and effective) ---
 if query:
     st.markdown(f"**💬 You asked:** {query}")
-    try:
-        token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-        if not token:
-            raise ValueError("Missing HUGGINGFACEHUB_API_TOKEN. Please add it to Streamlit secrets.")
 
-        llm = HuggingFaceHub(
-            repo_id="google/flan-t5-small",
-            task="text2text-generation",
-            model_kwargs={"temperature": 0.5, "max_length": 512}
-        )
+    # Clean and split transcript into lines or chunks
+    sentences = [s.strip() for s in transcript.split("\n") if s.strip()]
+    pattern = re.compile(re.escape(query), re.IGNORECASE)
+    matches = [s for s in sentences if pattern.search(s)]
 
-        qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            retriever=vectorstore.as_retriever(),
-            chain_type="stuff",
-            return_source_documents=False
-        )
-
-        response = qa_chain.run(query)
-        st.markdown(f"**🤖 AI says:** {response}")
-
-    except Exception as e:
-        st.error("❌ AI failed to generate a response.")
-        st.code(traceback.format_exc())
+    if matches:
+        st.markdown("### 🔍 Relevant Matches")
+        for match in matches[:10]:
+            st.markdown(f"🟢 {match}")
+    else:
+        st.warning("⚠️ No matching snippets found. Try simpler or alternative keywords.")
