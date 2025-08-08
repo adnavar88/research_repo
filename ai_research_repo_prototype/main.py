@@ -4,7 +4,7 @@ import traceback
 from pathlib import Path
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.embeddings import HuggingFaceHubEmbeddings
+from langchain.embeddings import SentenceTransformerEmbeddings
 from langchain.llms import HuggingFaceHub
 from langchain.docstore.document import Document
 from langchain.chains import RetrievalQA
@@ -12,9 +12,9 @@ from langchain.chains import RetrievalQA
 # --- Streamlit UI setup ---
 st.set_page_config(page_title="Lab Research Q&A", layout="wide")
 st.title("🧬 Lab Research Q&A (with AI)")
-st.caption("Using Hugging Face embeddings and flan-t5-small to answer from text.txt")
+st.caption("Using local CPU-safe embeddings + flan-t5-small from Hugging Face")
 
-# --- Load text.txt (must be in same folder as main.py) ---
+# --- Load text.txt (from same folder as main.py) ---
 try:
     base_path = Path(__file__).parent
     file_path = base_path / "text.txt"
@@ -30,36 +30,38 @@ except Exception as e:
     st.code(str(e))
     st.stop()
 
-# --- Show preview ---
+# --- Show transcript preview ---
 with st.expander("📄 View Transcript Preview"):
     st.text(transcript[:1000])  # Preview first 1000 chars
 
-# --- Input box ---
-query = st.text_input("❓ Ask a question based on the transcript")
+# --- User input ---
+query = st.text_input("❓ Ask a question about lab workflows, systems, or pain points")
 
-# --- Build vectorstore ---
+# --- Build embeddings + vectorstore ---
 try:
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     docs = [Document(page_content=transcript)]
     split_docs = splitter.split_documents(docs)
 
-    embeddings = HuggingFaceHubEmbeddings(
-        repo_id="sentence-transformers/all-MiniLM-L6-v2"
+    embeddings = SentenceTransformerEmbeddings(
+        model_name="all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"}  # ✅ Ensures CPU compatibility
     )
+
     vectorstore = FAISS.from_documents(split_docs, embeddings)
 
 except Exception as e:
-    st.error("❌ Error during embedding or vectorstore creation.")
+    st.error("❌ Failed to create embeddings or vectorstore.")
     st.code(traceback.format_exc())
     st.stop()
 
-# --- Handle query and run QA chain ---
+# --- Run retrieval + answer generation ---
 if query:
     st.markdown(f"**💬 You asked:** {query}")
     try:
         token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
         if not token:
-            raise ValueError("Missing HUGGINGFACEHUB_API_TOKEN in Streamlit secrets.")
+            raise ValueError("Missing HUGGINGFACEHUB_API_TOKEN. Please add it to Streamlit secrets.")
 
         llm = HuggingFaceHub(
             repo_id="google/flan-t5-small",
