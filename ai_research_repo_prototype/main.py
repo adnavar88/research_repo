@@ -12,13 +12,17 @@ from langchain.chains import RetrievalQA
 # --- Streamlit UI setup ---
 st.set_page_config(page_title="Lab Research Q&A", layout="wide")
 st.title("🧬 Lab Research Q&A (with AI)")
-st.caption("Now using Hugging Face models for real-time answers from text.txt")
+st.caption("Using Hugging Face embeddings and flan-t5-small to answer from text.txt")
 
-# --- Load text.txt directly ---
+# --- Load text.txt (must be in same folder as main.py) ---
 try:
-    file_path = Path("text.txt")
+    base_path = Path(__file__).parent
+    file_path = base_path / "text.txt"
+    st.write(f"📍 Checking file path: `{file_path.resolve()}`")
+
     if not file_path.exists():
-        raise FileNotFoundError("File not found at: " + str(file_path.resolve()))
+        raise FileNotFoundError(f"File not found at: {file_path.resolve()}")
+
     transcript = file_path.read_text(encoding="utf-8")
     st.success("✅ text.txt loaded successfully.")
 except Exception as e:
@@ -28,12 +32,12 @@ except Exception as e:
 
 # --- Show preview ---
 with st.expander("📄 View Transcript Preview"):
-    st.text(transcript[:1000])
+    st.text(transcript[:1000])  # Preview first 1000 chars
 
-# --- Input field ---
-query = st.text_input("❓ Ask a question about lab workflows, pain points, systems, etc.")
+# --- Input box ---
+query = st.text_input("❓ Ask a question based on the transcript")
 
-# --- Embed + Vectorstore ---
+# --- Build vectorstore ---
 try:
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     docs = [Document(page_content=transcript)]
@@ -45,19 +49,17 @@ try:
     vectorstore = FAISS.from_documents(split_docs, embeddings)
 
 except Exception as e:
-    st.error("❌ Failed to process transcript into embeddings.")
+    st.error("❌ Error during embedding or vectorstore creation.")
     st.code(traceback.format_exc())
     st.stop()
 
-# --- Run Q&A ---
+# --- Handle query and run QA chain ---
 if query:
     st.markdown(f"**💬 You asked:** {query}")
-    response = None
-
     try:
         token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
         if not token:
-            raise ValueError("❌ Hugging Face token missing. Set it in Streamlit secrets.")
+            raise ValueError("Missing HUGGINGFACEHUB_API_TOKEN in Streamlit secrets.")
 
         llm = HuggingFaceHub(
             repo_id="google/flan-t5-small",
@@ -73,12 +75,8 @@ if query:
         )
 
         response = qa_chain.run(query)
+        st.markdown(f"**🤖 AI says:** {response}")
 
     except Exception as e:
         st.error("❌ AI failed to generate a response.")
         st.code(traceback.format_exc())
-
-    if response:
-        st.markdown(f"**🤖 AI says:** {response}")
-    else:
-        st.warning("⚠️ No response generated.")
